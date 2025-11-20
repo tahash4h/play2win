@@ -213,6 +213,29 @@
       font-size: 9px;
       color: #666;
     }
+    
+    /* Bottom navigation styling (buttons under prediction) */
+    .bottom-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 20px;
+      align-items: center;
+    }
+
+    .bottom-nav button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+      font-weight: 600;
+    }
+
+    .back-btn { background-color: #757575; color: white; }
+    .back-btn:hover { background-color: #616161; }
+    .forward-btn { background-color: #00c853; color: white; }
+    .forward-btn:hover { background-color: #00a044; }
   </style>
 </head>
 <body>
@@ -316,6 +339,10 @@
       <div class="prediction-title">AI Model Prediction</div>
       <div id="modelPredictionResult" class="prediction-content">
         <div class="loading">Loading AI model prediction...</div>
+      </div>
+      <div class="bottom-nav">
+        <button class="back-btn" onclick="goBackToInformation()">← Back to Information</button>
+        <button class="forward-btn" onclick="goToConclusions()">Final Conclusion →</button>
       </div>
     </div>
   </div>
@@ -800,16 +827,45 @@
           formattedResponse = '<p>' + formattedResponse + '</p>';
         }
         
-        modelPredictionResult.innerHTML = formattedResponse;
-        
-        // Clear sessionStorage
-        sessionStorage.removeItem('modelQuery');
+    modelPredictionResult.innerHTML = formattedResponse;
+
+    // Persist final model output so conclusions page can read it
+    try {
+      sessionStorage.setItem('modelFinal', data.response);
+    } catch (e) {
+      console.warn('Could not persist modelFinal to sessionStorage', e);
+    }
+
+    // Clear transient model query
+    sessionStorage.removeItem('modelQuery');
       } catch (error) {
         console.error('Error generating model prediction:', error);
         const errorMessage = error.message || 'An unknown error occurred';
         modelPredictionResult.innerHTML = `<div class="error">Error generating prediction:\n\n${errorMessage}</div>`;
       }
     });
+
+    // Navigation helpers (global scope so buttons can call them)
+    function goBackToInformation() {
+      // Clear the current model query and return to the dashboard/information page
+      try {
+        sessionStorage.removeItem('modelQuery');
+      } catch (e) {
+        /* ignore */
+      }
+      window.location.href = '/dashboard.html';
+    }
+
+    function goToConclusions() {
+      // Prepare the final conclusion page. Prefer modelQuery, then researcherQuery, then originalQuery
+      const query = sessionStorage.getItem('modelQuery') || sessionStorage.getItem('researcherQuery') || sessionStorage.getItem('originalQuery');
+      if (!query) {
+        alert('No query found to make a final conclusion. Please go back to the information page and generate a prediction first.');
+        return;
+      }
+      sessionStorage.setItem('conclusionQuery', query);
+      window.location.href = '/app/conclusions.html';
+    }
   </script>
 
 </body>

@@ -246,8 +246,15 @@
             }
             
             aiPredictionResult.innerHTML = formattedResponse;
-            
-            // Clear response but keep query for model page navigation
+
+            // Persist final researcher output so conclusions page can read it
+            try {
+                sessionStorage.setItem('researcherFinal', response);
+            } catch (e) {
+                console.warn('Could not persist researcherFinal to sessionStorage', e);
+            }
+
+            // Clear the transient response key but keep the query for the model page
             sessionStorage.removeItem('researcherResponse');
             // Keep researcherQuery for model page - it will be cleared when navigating to model
         });

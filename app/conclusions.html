@@ -59,20 +59,100 @@
   .button.secondary {
     background-color: #6c757d;
   }
+  .loading {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+  }
+  .error {
+    text-align: center;
+    color: #e74c3c;
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>Conclusion Based on Findings</h1>
-</header>
-    <div>
-        <p>This is final conclusion page based on the findings of the previous findings
-        in the "model.html" page and it states that there is a huge correlation between 
-        the high engagement of the midfield unit and the successful transition acts between
-        each score with the soccer ball. 
-        </p>
+    <h1>Final Play Assessment</h1>
+    <div class="text-block" id="conclusionContent">
+      <div class="loading">Generating final conclusion...</div>
     </div>
-</div>
+    <div class="button-container">
+      <button id="logoutBtn" class="button secondary">Logout</button>
+      <a href="/app/information.html" class="button">New Prediction</a>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      const conclusionContent = document.getElementById('conclusionContent');
+      // Read the stored AI outputs from previous pages
+      const researcherText = sessionStorage.getItem('researcherFinal') || sessionStorage.getItem('researcherResponse');
+      const modelText = sessionStorage.getItem('modelFinal') || sessionStorage.getItem('modelResponse');
+
+      if (!researcherText && !modelText) {
+        conclusionContent.innerHTML = '<p class="error">No AI outputs found. Please run the researcher and model predictions first.</p>';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/conclusions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ researcher: researcherText, model: modelText })
+        });
+
+        if (!response.ok) {
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            errorData = { error: 'Unknown error', details: `HTTP ${response.status}: ${response.statusText}` };
+          }
+
+          const errorMsg = errorData.error || 'Failed to generate conclusion';
+          const errorDetails = errorData.details || errorData.message || '';
+          const fullError = errorDetails ? `${errorMsg}\n\n${errorDetails}` : errorMsg;
+
+          throw new Error(fullError);
+        }
+
+        const data = await response.json();
+
+        if (!data.response) {
+          throw new Error('No response received from server. The API returned an empty response.');
+        }
+
+        // Convert markdown-style formatting to HTML
+        let formattedResponse = data.response
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\n\n+/g, '</p><p>')
+          .replace(/\n/g, '<br>');
+
+        if (!formattedResponse.startsWith('<p>')) {
+          formattedResponse = '<p>' + formattedResponse + '</p>';
+        }
+
+        conclusionContent.innerHTML = formattedResponse;
+
+  // Optionally clear the stored finals so repeated visits don't re-run
+  try { sessionStorage.removeItem('researcherFinal'); } catch (e) {}
+  try { sessionStorage.removeItem('modelFinal'); } catch (e) {}
+      } catch (error) {
+        console.error('Error generating conclusion:', error);
+        const errorMessage = error.message || 'An unknown error occurred';
+        conclusionContent.innerHTML = `<p class="error">Error generating conclusion:\n\n${errorMessage}</p>`;
+      }
+    });
+
+    // Wire logout button
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      // Redirect to server logout route which destroys the session
+      window.location.href = '/logout';
+    });
+  </script>
 </body>
 </html>
