@@ -159,6 +159,47 @@
             padding: 15px;
             display: none; /* Hidden by default */
         }
+
+        /* Navigation buttons at bottom */
+        .bottom-nav {
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #e0e0e0;
+            background-color: #fcfcfc;
+        }
+
+        .bottom-nav button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .back-btn {
+            background-color: #757575;
+            color: white;
+        }
+
+        .back-btn:hover {
+            background-color: #616161;
+        }
+
+        .forward-btn {
+            background-color: #00c853;
+            color: white;
+        }
+
+        .forward-btn:hover {
+            background-color: #00a044;
+        }
+
+        .bottom-nav button:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
@@ -172,6 +213,11 @@
                 Enter a query on the information page to see research predictions here.
             </div>
             <p class="loading" id="loadingIndicator">Generating in-depth insights... please wait.</p>
+        
+        <div class="bottom-nav">
+            <button class="back-btn" onclick="goBackToInformation()">← Back to Information</button>
+            <button class="forward-btn" onclick="goToModel()">AI Model Prediction →</button>
+        </div>
         </div>
     </div>
     <script>
@@ -201,10 +247,39 @@
             
             aiPredictionResult.innerHTML = formattedResponse;
             
-            // Clear sessionStorage after displaying
+            // Clear response but keep query for model page navigation
             sessionStorage.removeItem('researcherResponse');
-            sessionStorage.removeItem('researcherQuery');
+            // Keep researcherQuery for model page - it will be cleared when navigating to model
         });
+
+        function goBackToInformation() {
+            // Clear the query from information page and go back
+            sessionStorage.setItem('resetQuery', 'true');
+            window.location.href = '/dashboard.html';
+        }
+
+        function goToModel() {
+            // Navigate to model page with the same query
+            // Get query from sessionStorage - it should be preserved from information page
+            const query = sessionStorage.getItem('researcherQuery') || sessionStorage.getItem('originalQuery');
+            console.log('goToModel - Current query:', query);
+            console.log('All sessionStorage keys:', Object.keys(sessionStorage));
+            
+            if (query) {
+                // Store it as modelQuery for the model page
+                sessionStorage.setItem('modelQuery', query);
+                // Also keep originalQuery as backup
+                if (!sessionStorage.getItem('originalQuery')) {
+                    sessionStorage.setItem('originalQuery', query);
+                }
+                console.log('Query transferred to model page:', query);
+            } else {
+                console.error('No query found in sessionStorage! Available keys:', Object.keys(sessionStorage));
+                alert('Error: No query found. Please go back to the information page and generate a prediction first.');
+                return;
+            }
+            window.location.href = '/app/model.html';
+        }
     </script>
 </body>
 </html>

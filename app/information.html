@@ -832,7 +832,15 @@
     });
 
     // Load data when page loads
-    document.addEventListener('DOMContentLoaded', loadComprehensiveData);
+    document.addEventListener('DOMContentLoaded', function() {
+        loadComprehensiveData();
+        
+        // Reset query box if coming back from researcher page
+        if (sessionStorage.getItem('resetQuery') === 'true') {
+            document.getElementById('predictionQuery').value = '';
+            sessionStorage.removeItem('resetQuery');
+        }
+    });
 
     // Handle generate prediction button
     document.getElementById('generatePredictionBtn').addEventListener('click', async function() {
@@ -881,6 +889,8 @@
         // Store response in sessionStorage and redirect
         sessionStorage.setItem('researcherResponse', data.response);
         sessionStorage.setItem('researcherQuery', query);
+        // Also store as originalQuery as backup for model page
+        sessionStorage.setItem('originalQuery', query);
         window.location.href = '/app/researcher.html';
       } catch (error) {
         console.error('Error generating prediction:', error);

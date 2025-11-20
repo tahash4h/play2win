@@ -1,31 +1,816 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Based Prediction</title>
+  <meta charset="UTF-8" />
+  <title>AI Model Prediction</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .main-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    .left-panel {
+      width: 40%;
+      padding: 30px;
+      overflow-y: auto;
+      background-color: #f8f9fa;
+    }
+    
+    .right-panel {
+      width: 60%;
+      padding: 30px;
+      overflow-y: auto;
+      background-color: #ffffff;
+    }
+    
+    .chart-container {
+      width: 100%;
+      height: 500px;
+      margin-bottom: 40px;
+      position: relative;
+    }
+    
+    .chart-container.large {
+      height: 600px;
+    }
+    
+    .chart-title {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .chart-subtitle {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 16px;
+      color: #666;
+    }
+    
+    .controls-panel {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    
+    .control-label {
+      font-weight: bold;
+      font-size: 12px;
+      color: #333;
+    }
+    
+    .control-select {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .visualization-selector {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    
+    .selector-label {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #333;
+    }
+    
+    .selector-dropdown {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+    }
+    
+    .prediction-section {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+    
+    .prediction-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+      border-bottom: 3px solid #00c853;
+      padding-bottom: 10px;
+    }
+    
+    .prediction-content {
+      background-color: #f9fdfb;
+      padding: 20px;
+      border-left: 6px solid #00c853;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      color: #444;
+      font-size: 1.1em;
+      line-height: 1.7;
+      min-height: 200px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    .loading {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .error {
+      text-align: center;
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    
+    .team-comparison {
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .team-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .team-name {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+    
+    .team-stats {
+      font-size: 11px;
+      color: #666;
+    }
+    
+    .shot-map-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 15px;
+    }
+    
+    .shot-location {
+      background: #f8f9fa;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: border-color 0.3s;
+    }
+    
+    .shot-location:hover {
+      border-color: #007bff;
+    }
+    
+    .location-name {
+      font-weight: bold;
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+    
+    .location-stats {
+      font-size: 9px;
+      color: #666;
+    }
+  </style>
 </head>
 <body>
-    <img src="Medium.jpg" alt="Prediction Plot">
-    <p>Based on the sophisticated XGboost model trained on 
-    historical "Substance-Powers-Acts" data, the prediction 
-    suggests a **[New Play Name]** play will have the highest 
-    success rate of **[Predicted Metric Value]**. This forecast 
-    takes into account the opponents' recent defensive power-ratings 
-    and the temporal sequencing of past effective acts (run/pass, 
-    zone penetration).</p>
-    <p>
-                    The model identified a significant correlation between high 
-                    engagement of the midfield unit (Power-7) and successful 
-                    transition acts (Act-3), especially in the final third of 
-                    the game (Act-9). The new data point (predicted data) has 
-                    been integrated into the plot on the right, shown as the 
-                    dashed red line extending the trend.
-                </p>
-                <p>
-                    The predicted trend shows a clear [rising/falling/stable] 
-                    success metric, indicating the recommended play is **highly 
-                    viable** under current opponent conditions.
-                </p>
+
+  <div class="main-container">
+    <div class="left-panel">
+    <h2>Match Analysis Visualizations</h2>
+    <p>These visualizations provide context for the AI model's predictions, showing historical patterns and trends in the match data.</p>
+    
+    <div class="visualization-selector">
+      <div class="selector-label">Select Visualization:</div>
+      <select id="visualizationSelect" class="selector-dropdown">
+        <option value="goalsTimeline">🎯 Goals Timeline Analysis</option>
+        <option value="scatterMatrix">📊 Advanced Scatter Plot Matrix</option>
+        <option value="shotMap">🗺️ Shot Map Analysis</option>
+        <option value="teamComparison">👥 Team Comparison</option>
+      </select>
+    </div>
+
+    <div id="goalsTimelineSection" class="visualization-section">
+      <div class="chart-title">Goals Timeline Analysis</div>
+      <div class="chart-subtitle">When and how goals are scored across all matches</div>
+      
+      <div class="controls-panel">
+        <div class="control-group">
+          <label class="control-label">Opponent:</label>
+          <select id="opponentFilter" class="control-select">
+            <option value="all">All Opponents</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Play Context:</label>
+          <select id="contextFilter" class="control-select">
+            <option value="all">All Contexts</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="chart-container large">
+        <canvas id="goalsTimelineChart"></canvas>
+      </div>
+    </div>
+
+    <div id="scatterMatrixSection" class="visualization-section" style="display: none;">
+      <div class="chart-title">Advanced Scatter Plot Matrix</div>
+      <div class="chart-subtitle">Multiple correlation analyses with interactive filtering</div>
+      
+      <div class="controls-panel">
+        <div class="control-group">
+          <label class="control-label">Opponent:</label>
+          <select id="matrixOpponentFilter" class="control-select">
+            <option value="all">All Opponents</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Game Phase:</label>
+          <select id="matrixPhaseFilter" class="control-select">
+            <option value="all">All Phases</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Play Context:</label>
+          <select id="matrixContextFilter" class="control-select">
+            <option value="all">All Contexts</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="chart-title">Distance vs Expected Goals (xG)</div>
+      <div class="chart-subtitle">Correlation between shot distance and expected goals</div>
+      <div class="chart-container">
+        <canvas id="distanceXGChart"></canvas>
+      </div>
+
+      <div class="chart-title">Match Minute vs Success Rate</div>
+      <div class="chart-subtitle">Success rate analysis by match periods</div>
+      <div class="chart-container">
+        <canvas id="minuteSuccessChart"></canvas>
+      </div>
+    </div>
+
+    <div id="teamComparisonSection" class="visualization-section" style="display: none;">
+      <div class="chart-title">Team Comparison</div>
+      <div class="chart-subtitle">Performance comparison across all opponents</div>
+      <div class="team-comparison" id="teamComparisonDropdown">
+        <div class="loading">Loading team data...</div>
+      </div>
+    </div>
+
+    <div id="shotMapSection" class="visualization-section" style="display: none;">
+      <div class="chart-title">Shot Map - Location Analysis</div>
+      <div class="chart-subtitle">Performance by field location</div>
+      <div class="shot-map-grid" id="shotMap">
+        <div class="loading">Loading shot map...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="prediction-section">
+      <div class="prediction-title">AI Model Prediction</div>
+      <div id="modelPredictionResult" class="prediction-content">
+        <div class="loading">Loading AI model prediction...</div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script>
+    // Copy chart rendering functions from information.html
+    let goalsTimelineChart;
+    let distanceXGChart;
+    let minuteSuccessChart;
+    let comprehensiveData;
+
+    async function loadComprehensiveData() {
+      try {
+        const response = await fetch('/api/comprehensive-data');
+        comprehensiveData = await response.json();
+        
+        populateTeamComparisonDropdown();
+        populateShotMap();
+        populateFilters();
+        populateMatrixFilters();
+        renderGoalsTimeline();
+        renderDistanceXGChart();
+        renderMinuteSuccessChart();
+        
+      } catch (error) {
+        console.error('Error loading comprehensive data:', error);
+      }
+    }
+
+    function populateTeamComparisonDropdown() {
+      const container = document.getElementById('teamComparisonDropdown');
+      if (!container || !comprehensiveData) return;
+      const teams = Object.keys(comprehensiveData.teamComparison);
+      
+      container.innerHTML = teams.map(team => {
+        const stats = comprehensiveData.teamComparison[team];
+        return `
+          <div class="team-item">
+            <div class="team-name">${team}</div>
+            <div class="team-stats">
+              ${stats.gamesPlayed} games<br>
+              ${stats.totalGoals} goals<br>
+              ${stats.conversionRate.toFixed(1)}% conv.
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function populateShotMap() {
+      const container = document.getElementById('shotMap');
+      if (!container || !comprehensiveData) return;
+      const locations = Object.keys(comprehensiveData.shotMapData);
+      
+      container.innerHTML = locations.map(location => {
+        const data = comprehensiveData.shotMapData[location];
+        return `
+          <div class="shot-location">
+            <div class="location-name">${location}</div>
+            <div class="location-stats">
+              ${data.totalShots} shots<br>
+              ${data.goals} goals<br>
+              ${data.successRate.toFixed(1)}% success<br>
+              ${data.avgXG.toFixed(2)} avg xG
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function populateFilters() {
+      if (!comprehensiveData) return;
+      const opponentFilter = document.getElementById('opponentFilter');
+      const opponents = [...new Set(comprehensiveData.goalsTimeline.map(goal => goal.opponent))];
+      opponents.forEach(opponent => {
+        const option = document.createElement('option');
+        option.value = opponent;
+        option.textContent = opponent;
+        opponentFilter.appendChild(option);
+      });
+
+      const contextFilter = document.getElementById('contextFilter');
+      const contexts = [...new Set(comprehensiveData.goalsTimeline.map(goal => goal.playContext))];
+      contexts.forEach(context => {
+        const option = document.createElement('option');
+        option.value = context;
+        option.textContent = context;
+        contextFilter.appendChild(option);
+      });
+    }
+
+    function populateMatrixFilters() {
+      if (!comprehensiveData) return;
+      const matrixOpponentFilter = document.getElementById('matrixOpponentFilter');
+      const opponents = [...new Set(comprehensiveData.games.map(game => game.opponent))];
+      opponents.forEach(opponent => {
+        const option = document.createElement('option');
+        option.value = opponent;
+        option.textContent = opponent;
+        matrixOpponentFilter.appendChild(option);
+      });
+
+      const matrixPhaseFilter = document.getElementById('matrixPhaseFilter');
+      const phases = ['Early', 'Middle', 'Late'];
+      phases.forEach(phase => {
+        const option = document.createElement('option');
+        option.value = phase;
+        option.textContent = phase;
+        matrixPhaseFilter.appendChild(option);
+      });
+
+      const matrixContextFilter = document.getElementById('matrixContextFilter');
+      const contexts = [...new Set(comprehensiveData.games.flatMap(game => 
+        game.plays.map(play => play.playContext)
+      ).filter(context => context))];
+      contexts.forEach(context => {
+        const option = document.createElement('option');
+        option.value = context;
+        option.textContent = context;
+        matrixContextFilter.appendChild(option);
+      });
+    }
+
+    function renderGoalsTimeline() {
+      if (!comprehensiveData) return;
+      const ctx = document.getElementById('goalsTimelineChart').getContext('2d');
+      
+      if (goalsTimelineChart) {
+        goalsTimelineChart.destroy();
+      }
+
+      const selectedOpponent = document.getElementById('opponentFilter').value;
+      const selectedContext = document.getElementById('contextFilter').value;
+      
+      let filteredGoals = comprehensiveData.goalsTimeline;
+      if (selectedOpponent !== 'all') {
+        filteredGoals = filteredGoals.filter(goal => goal.opponent === selectedOpponent);
+      }
+      if (selectedContext !== 'all') {
+        filteredGoals = filteredGoals.filter(goal => goal.playContext === selectedContext);
+      }
+
+      const datasets = {};
+      
+      filteredGoals.forEach(goal => {
+        if (!datasets[goal.opponent]) {
+          datasets[goal.opponent] = [];
+        }
+        datasets[goal.opponent].push({
+          x: goal.minute,
+          y: goal.xG,
+          opponent: goal.opponent,
+          playType: goal.playType,
+          playContext: goal.playContext,
+          location: goal.location,
+          xG: goal.xG,
+          winImpact: goal.winImpact
+        });
+      });
+
+      const colors = [
+        'rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 205, 86, 0.8)',
+        'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)'
+      ];
+
+      const chartDatasets = Object.keys(datasets).map((opponent, index) => ({
+        label: opponent,
+        data: datasets[opponent],
+        backgroundColor: colors[index % colors.length],
+        borderColor: colors[index % colors.length].replace('0.8', '1'),
+        pointRadius: 6,
+        pointHoverRadius: 8
+      }));
+
+      goalsTimelineChart = new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets: chartDatasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Goals Timeline - Minute vs Expected Goals' },
+            legend: { display: true, position: 'top' },
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return `${point.opponent || 'Unknown'} - Minute ${point.x || point.xValue || ''}`;
+                },
+                label: function(context) {
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return [
+                    `Play Type: ${point.playType || 'N/A'}`,
+                    `Context: ${point.playContext || 'N/A'}`,
+                    `Location: ${point.location || 'N/A'}`,
+                    `xG: ${point.xG ? point.xG.toFixed(2) : 'N/A'}`,
+                    `Win Impact: ${point.winImpact || 'N/A'}`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Match Minute' }, min: 0, max: 90 },
+            y: { title: { display: true, text: 'Expected Goals (xG)' }, min: 0 }
+          }
+        }
+      });
+    }
+
+    function getFilteredMatrixData() {
+      if (!comprehensiveData) return [];
+      const selectedOpponent = document.getElementById('matrixOpponentFilter').value;
+      const selectedPhase = document.getElementById('matrixPhaseFilter').value;
+      const selectedContext = document.getElementById('matrixContextFilter').value;
+      
+      let filteredGames = comprehensiveData.games;
+      if (selectedOpponent !== 'all') {
+        filteredGames = filteredGames.filter(game => game.opponent === selectedOpponent);
+      }
+      
+      let allPlays = filteredGames.flatMap(game => game.plays);
+      
+      if (selectedPhase !== 'all') {
+        allPlays = allPlays.filter(play => play.phaseOfMatch === selectedPhase);
+      }
+      
+      if (selectedContext !== 'all') {
+        allPlays = allPlays.filter(play => play.playContext === selectedContext);
+      }
+      
+      return allPlays;
+    }
+
+    function renderDistanceXGChart() {
+      if (!comprehensiveData) return;
+      const ctx = document.getElementById('distanceXGChart').getContext('2d');
+      
+      if (distanceXGChart) {
+        distanceXGChart.destroy();
+      }
+
+      const shotData = getFilteredMatrixData().filter(play => 
+        play.shotAttempt === 'Yes' && play.shotDistance && play.xG > 0
+      );
+
+      distanceXGChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Shots',
+            data: shotData.map(shot => ({
+              x: shot.shotDistance,
+              y: shot.xG,
+              outcome: shot.shotOutcome,
+              playType: shot.playType,
+              context: shot.playContext,
+              location: shot.location,
+              opponent: shot.opponent || 'Unknown'
+            })),
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return `${point.playType || 'Unknown'} - ${point.outcome || 'N/A'}`;
+                },
+                label: function(context) {
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return [
+                    `Distance: ${point.x || point.xValue || 'N/A'} yards`,
+                    `xG: ${point.y || point.yValue ? (point.y || point.yValue).toFixed(2) : 'N/A'}`,
+                    `Context: ${point.context || 'N/A'}`,
+                    `Location: ${point.location || 'N/A'}`,
+                    `Opponent: ${point.opponent || 'N/A'}`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Shot Distance (yards)' } },
+            y: { title: { display: true, text: 'Expected Goals (xG)' } }
+          }
+        }
+      });
+    }
+
+    function renderMinuteSuccessChart() {
+      if (!comprehensiveData) return;
+      const ctx = document.getElementById('minuteSuccessChart').getContext('2d');
+      
+      if (minuteSuccessChart) {
+        minuteSuccessChart.destroy();
+      }
+
+      const shotData = getFilteredMatrixData().filter(play => play.shotAttempt === 'Yes');
+
+      const minuteRanges = {};
+      shotData.forEach(play => {
+        const range = Math.floor(play.minute / 10) * 10;
+        if (!minuteRanges[range]) {
+          minuteRanges[range] = { total: 0, successful: 0 };
+        }
+        minuteRanges[range].total++;
+        if (play.shotOutcome === 'Goal') {
+          minuteRanges[range].successful++;
+        }
+      });
+
+      const minuteSuccessData = Object.keys(minuteRanges).map(range => ({
+        x: parseInt(range) + 5,
+        y: (minuteRanges[range].successful / minuteRanges[range].total) * 100,
+        total: minuteRanges[range].total,
+        successful: minuteRanges[range].successful
+      }));
+
+      minuteSuccessChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Success Rate by Minute',
+            data: minuteSuccessData,
+            backgroundColor: 'rgba(255, 99, 132, 0.6)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return `Minute ${point.x || point.xValue || 'N/A'} Range`;
+                },
+                label: function(context) {
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return [
+                    `Success Rate: ${point.y || point.yValue ? (point.y || point.yValue).toFixed(1) : 'N/A'}%`,
+                    `Total Shots: ${point.total || 'N/A'}`,
+                    `Successful: ${point.successful || 'N/A'}`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Match Minute' }, min: 0, max: 90 },
+            y: { title: { display: true, text: 'Success Rate (%)' }, min: 0, max: 100 }
+          }
+        }
+      });
+    }
+
+    function showVisualization(visualization) {
+      document.querySelectorAll('.visualization-section').forEach(section => {
+        section.style.display = 'none';
+      });
+      document.getElementById(visualization + 'Section').style.display = 'block';
+    }
+
+    // Event listeners
+    document.getElementById('opponentFilter').addEventListener('change', renderGoalsTimeline);
+    document.getElementById('contextFilter').addEventListener('change', renderGoalsTimeline);
+    document.getElementById('matrixOpponentFilter').addEventListener('change', function() {
+      renderDistanceXGChart();
+      renderMinuteSuccessChart();
+    });
+    document.getElementById('matrixPhaseFilter').addEventListener('change', function() {
+      renderDistanceXGChart();
+      renderMinuteSuccessChart();
+    });
+    document.getElementById('matrixContextFilter').addEventListener('change', function() {
+      renderDistanceXGChart();
+      renderMinuteSuccessChart();
+    });
+    document.getElementById('visualizationSelect').addEventListener('change', function() {
+      showVisualization(this.value);
+    });
+
+    // Load data and display prediction
+    document.addEventListener('DOMContentLoaded', async function() {
+      await loadComprehensiveData();
+      
+      const modelPredictionResult = document.getElementById('modelPredictionResult');
+      // Try to get query from multiple possible sources (in order of preference)
+      let query = sessionStorage.getItem('modelQuery') 
+               || sessionStorage.getItem('researcherQuery') 
+               || sessionStorage.getItem('originalQuery');
+
+      console.log('SessionStorage contents:');
+      console.log('modelQuery:', sessionStorage.getItem('modelQuery'));
+      console.log('researcherQuery:', sessionStorage.getItem('researcherQuery'));
+      console.log('originalQuery:', sessionStorage.getItem('originalQuery'));
+      console.log('Final query:', query);
+
+      if (!query) {
+        modelPredictionResult.innerHTML = '<div class="error">No prediction query found. Please generate a prediction from the information page first.</div>';
+        return;
+      }
+      
+      // Store it as modelQuery for consistency and future use
+      sessionStorage.setItem('modelQuery', query);
+      console.log('Query stored as modelQuery:', query);
+
+      // Generate model prediction
+      try {
+        console.log('Query being sent to model API:', query);
+        modelPredictionResult.innerHTML = '<div class="loading">Generating AI model prediction... please wait.</div>';
+        
+        const response = await fetch('/api/model-pred', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query })
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response URL:', response.url);
+
+        if (!response.ok) {
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            errorData = { error: 'Unknown error', details: `HTTP ${response.status}: ${response.statusText}` };
+          }
+          
+          const errorMsg = errorData.error || 'Failed to generate prediction';
+          const errorDetails = errorData.details || errorData.message || '';
+          const fullError = errorDetails ? `${errorMsg}\n\n${errorDetails}` : errorMsg;
+          
+          throw new Error(fullError);
+        }
+
+        const data = await response.json();
+        
+        if (!data.response) {
+          throw new Error('No response received from server. The API returned an empty response.');
+        }
+        
+        // Convert markdown-style formatting to HTML
+        let formattedResponse = data.response
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\n\n+/g, '</p><p>')
+          .replace(/\n/g, '<br>');
+        
+        if (!formattedResponse.startsWith('<p>')) {
+          formattedResponse = '<p>' + formattedResponse + '</p>';
+        }
+        
+        modelPredictionResult.innerHTML = formattedResponse;
+        
+        // Clear sessionStorage
+        sessionStorage.removeItem('modelQuery');
+      } catch (error) {
+        console.error('Error generating model prediction:', error);
+        const errorMessage = error.message || 'An unknown error occurred';
+        modelPredictionResult.innerHTML = `<div class="error">Error generating prediction:\n\n${errorMessage}</div>`;
+      }
+    });
+  </script>
+
 </body>
 </html>

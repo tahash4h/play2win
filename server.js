@@ -6,6 +6,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { getComprehensiveData } = require('./app/api/comprehensive-data');
 const { getResearcherResponse } = require('./app/api/researcher');
+const { getModelPrediction } = require('./app/api/model-pred');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -81,6 +82,7 @@ app.get('/logout', (req, res, next) => {
 // API routes (protected)
 app.get('/api/comprehensive-data', ensureAuthenticated, getComprehensiveData);
 app.post('/api/researcher', ensureAuthenticated, getResearcherResponse);
+app.post('/api/model-pred', ensureAuthenticated, getModelPrediction);
 
 // Serve landing page and post-login dashboard
 app.get('/', (req, res) => {
@@ -93,6 +95,10 @@ app.get('/dashboard.html', ensureAuthenticated, (req, res) => {
 
 app.get('/app/researcher.html', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'app', 'researcher.html'));
+});
+
+app.get('/app/model.html', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'app', 'model.html'));
 });
 
 // Start server
