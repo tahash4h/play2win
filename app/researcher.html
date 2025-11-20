@@ -172,78 +172,41 @@
 
             
             <div id="aiPredictionResult">
-                Here, the AI will provide a detailed, research-oriented analysis based on your query.
-                It will explain the potential outcomes, underlying factors, and the reasoning behind its predictions, 
-                adhering to the persona of a well-informed researcher or analyst.
-                
-                Example structure:
-                
-                **Query:** [Your specific question]
-                **Research Analysis:** [In-depth discussion, evidence, trends]
-                **Hypothesis/Prediction:** [Clear statement of expected outcome or finding]
-                **Caveats:** [Limitations or factors that could alter the prediction]
+                Enter a query on the information page to see research predictions here.
             </div>
             <p class="loading" id="loadingIndicator">Generating in-depth insights... please wait.</p>
         </div>
     </div>
-
     <script>
-        // *** IMPORTANT: THIS SCRIPT ONLY HANDLES FRONT-END LOGIC. ***
-        // *** YOU MUST REPLACE THE FUNCTION BELOW WITH YOUR OWN SERVER-SIDE/AJAX/FETCH CALL TO THE OPENAI API. ***
-        
-        const generatePredictionButton = document.getElementById('generatePredictionButton');
-        const researcherQuery = document.getElementById('researcherQuery');
-        const aiPredictionResult = document.getElementById('aiPredictionResult');
-        const loadingIndicator = document.getElementById('loadingIndicator');
+        // Display the researcher response when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const aiPredictionResult = document.getElementById('aiPredictionResult');
+            const response = sessionStorage.getItem('researcherResponse');
+            const query = sessionStorage.getItem('researcherQuery');
 
-        generatePredictionButton.addEventListener('click', async () => {
-            const userQuestion = researcherQuery.value.trim();
-            if (userQuestion === "") {
-                alert("Please enter a research question or topic!");
+            // Redirect if no response (page accessed directly without generating)
+            if (!response) {
+                alert('Please generate a prediction from the information page first.');
+                window.location.href = '/dashboard.html';
                 return;
             }
 
-            // 1. Show Loading State
-            aiPredictionResult.innerHTML = ''; // Clear previous results
-            loadingIndicator.style.display = 'block';
-            generatePredictionButton.disabled = true;
-
-            // 2. CONSTRUCT THE PRE-WRITTEN PROMPT
-            // This is the core instruction sent to the AI, tailored for a research perspective.
-            const preWrittenPrompt = `
-                Act as an expert sports researcher and data scientist specializing in soccer analytics. 
-                Your task is to analyze the following research question/topic and provide comprehensive insights and predictions.
-                Your response MUST strictly adhere to this format, including the exact bolded labels:
-                
-                **Query:** ${userQuestion}
-                **Research Analysis:** Provide a detailed, evidence-based analysis (3-5 paragraphs) covering relevant statistical trends, tactical implications, historical data, and any contextual factors. Use objective language.
-                **Hypothesis/Prediction:** Based on your analysis, state a clear hypothesis or prediction regarding the outcome, trend, or answer to the query. Justify it concisely.
-                **Caveats:** Briefly mention any significant limitations, assumptions made, or external factors that could influence or alter this prediction/finding.
-            `;
-
-            console.log("Prompt sent to AI:", preWrittenPrompt);
-
-            // 3. AI/API CALL - **THIS SECTION NEEDS YOUR SERVER/API LOGIC**
-            /*
-            * In a real application, you would use 'fetch' or 'XMLHttpRequest' here 
-            * to send 'preWrittenPrompt' to your backend server, which would then 
-            * call the OpenAI API.
-            *
-            * Example of a placeholder response:
-            */
-            await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate 3-second API delay
-
-            const mockAIResponse = `
-                **Query:** ${userQuestion}
-                **Research Analysis:** The impact of VAR on penalty decisions is a complex area. Initial research indicated a slight increase in penalty awards due to retrospective reviews of incidents missed by the on-field referee. However, over time, as referees and players adapted, the rate stabilized. There's also evidence to suggest that VAR has reduced the number of 'soft' penalties given, as the scrutiny is higher. Furthermore, the implementation consistency across different leagues and even within a single league has been a subject of debate, impacting the perceived fairness and accuracy of decisions. Our analysis of the last three Premier League seasons shows a trend of initial increase, followed by a slight decrease, then stabilization in penalty awards directly attributed to VAR interventions.
-                **Hypothesis/Prediction:** VAR has led to a marginal net increase in correctly awarded penalties but has also introduced inconsistencies in interpretation, leading to ongoing debate rather than definitive clarity on penalty decisions. The trend suggests a plateauing effect as the system matures.
-                **Caveats:** This prediction is based on publicly available data. The subjective nature of 'clear and obvious error' criteria can influence outcomes. Consistency of VAR implementation and evolving referee training also play a crucial role.
-            `;
+            // Convert markdown-style formatting to HTML
+            let formattedResponse = response
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+                .replace(/\n\n+/g, '</p><p>') // Multiple newlines = paragraph breaks
+                .replace(/\n/g, '<br>'); // Single newlines = line breaks
             
-            // 4. Update UI with Result
-            loadingIndicator.style.display = 'none';
-            generatePredictionButton.disabled = false;
-            aiPredictionResult.innerHTML = mockAIResponse.replace(/\n/g, '<br>'); // Display result, converting newlines for HTML
+            // Wrap in paragraph tags if not already wrapped
+            if (!formattedResponse.startsWith('<p>')) {
+                formattedResponse = '<p>' + formattedResponse + '</p>';
+            }
+            
+            aiPredictionResult.innerHTML = formattedResponse;
+            
+            // Clear sessionStorage after displaying
+            sessionStorage.removeItem('researcherResponse');
+            sessionStorage.removeItem('researcherQuery');
         });
     </script>
 </body>

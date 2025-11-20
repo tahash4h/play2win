@@ -348,8 +348,8 @@
     </div>
 
     <div class="generate-section">
-      <input type="text" class="generate-input" placeholder="Generate predictions for play based on match data">
-      <button class="generate-btn">Generate Prediction</button>
+      <input type="text" id="predictionQuery" class="generate-input" placeholder="Generate predictions for play based on match data">
+      <button id="generatePredictionBtn" class="generate-btn">Generate Prediction</button>
     </div>
   </div>
   </div>
@@ -564,17 +564,23 @@
             tooltip: {
               callbacks: {
                 title: function(context) {
-                  const point = context[0].raw;
-                  return `${point.opponent} - Minute ${point.x}`;
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return `${point.opponent || 'Unknown'} - Minute ${point.x || point.xValue || ''}`;
                 },
                 label: function(context) {
-                  const point = context[0].raw;
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
                   return [
-                    `Play Type: ${point.playType}`,
-                    `Context: ${point.playContext}`,
-                    `Location: ${point.location}`,
-                    `xG: ${point.xG.toFixed(2)}`,
-                    `Win Impact: ${point.winImpact}`
+                    `Play Type: ${point.playType || 'N/A'}`,
+                    `Context: ${point.playContext || 'N/A'}`,
+                    `Location: ${point.location || 'N/A'}`,
+                    `xG: ${point.xG ? point.xG.toFixed(2) : 'N/A'}`,
+                    `Win Impact: ${point.winImpact || 'N/A'}`
                   ];
                 }
               }
@@ -662,17 +668,23 @@
             tooltip: {
               callbacks: {
                 title: function(context) {
-                  const point = context[0].raw;
-                  return `${point.playType} - ${point.outcome}`;
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return `${point.playType || 'Unknown'} - ${point.outcome || 'N/A'}`;
                 },
                 label: function(context) {
-                  const point = context[0].raw;
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
                   return [
-                    `Distance: ${point.x} yards`,
-                    `xG: ${point.y.toFixed(2)}`,
-                    `Context: ${point.context}`,
-                    `Location: ${point.location}`,
-                    `Opponent: ${point.opponent}`
+                    `Distance: ${point.x || point.xValue || 'N/A'} yards`,
+                    `xG: ${point.y || point.yValue ? (point.y || point.yValue).toFixed(2) : 'N/A'}`,
+                    `Context: ${point.context || 'N/A'}`,
+                    `Location: ${point.location || 'N/A'}`,
+                    `Opponent: ${point.opponent || 'N/A'}`
                   ];
                 }
               }
@@ -744,15 +756,21 @@
             tooltip: {
               callbacks: {
                 title: function(context) {
-                  const point = context[0].raw;
-                  return `Minute ${point.x} Range`;
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
+                  return `Minute ${point.x || point.xValue || 'N/A'} Range`;
                 },
                 label: function(context) {
-                  const point = context[0].raw;
+                  if (!context || !Array.isArray(context) || context.length === 0 || !context[0]) return '';
+                  const item = context[0];
+                  const point = item.raw || item.parsed;
+                  if (!point) return '';
                   return [
-                    `Success Rate: ${point.y.toFixed(1)}%`,
-                    `Total Shots: ${point.total}`,
-                    `Successful: ${point.successful}`
+                    `Success Rate: ${point.y || point.yValue ? (point.y || point.yValue).toFixed(1) : 'N/A'}%`,
+                    `Total Shots: ${point.total || 'N/A'}`,
+                    `Successful: ${point.successful || 'N/A'}`
                   ];
                 }
               }
@@ -815,6 +833,67 @@
 
     // Load data when page loads
     document.addEventListener('DOMContentLoaded', loadComprehensiveData);
+
+    // Handle generate prediction button
+    document.getElementById('generatePredictionBtn').addEventListener('click', async function() {
+      const query = document.getElementById('predictionQuery').value.trim();
+      
+      if (!query) {
+        alert('Please enter a question or query for the researcher.');
+        return;
+      }
+
+      const button = document.getElementById('generatePredictionBtn');
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Generating...';
+
+      try {
+        const response = await fetch('/api/researcher', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query })
+        });
+
+        if (!response.ok) {
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            errorData = { error: 'Unknown error', details: `HTTP ${response.status}: ${response.statusText}` };
+          }
+          
+          const errorMsg = errorData.error || 'Failed to generate prediction';
+          const errorDetails = errorData.details || errorData.message || '';
+          const fullError = errorDetails ? `${errorMsg}\n\n${errorDetails}` : errorMsg;
+          
+          throw new Error(fullError);
+        }
+
+        const data = await response.json();
+        
+        if (!data.response) {
+          throw new Error('No response received from server. The API returned an empty response.');
+        }
+        
+        // Store response in sessionStorage and redirect
+        sessionStorage.setItem('researcherResponse', data.response);
+        sessionStorage.setItem('researcherQuery', query);
+        window.location.href = '/app/researcher.html';
+      } catch (error) {
+        console.error('Error generating prediction:', error);
+        console.error('Error stack:', error.stack);
+        
+        // Show a more helpful error message
+        const errorMessage = error.message || 'An unknown error occurred';
+        alert(`Error generating prediction:\n\n${errorMessage}\n\nTroubleshooting:\n- Check that your Gemini API key is set correctly in .env\n- Verify the server is running\n- Check the browser console for more details`);
+        
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    });
   </script>
 
 </body>
