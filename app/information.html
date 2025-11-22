@@ -360,9 +360,10 @@
     let minuteSuccessChart;
     let comprehensiveData;
 
+    const API_BASE = 'https://play2win-bs0z.onrender.com';
     async function loadComprehensiveData() {
       try {
-        const response = await fetch('/api/comprehensive-data');
+        const response = await fetch(`${API_BASE}/api/comprehensive-data`);
         comprehensiveData = await response.json();
         
         populateTeamComparisonDropdown();
@@ -857,7 +858,7 @@
       button.textContent = 'Generating...';
 
       try {
-        const response = await fetch('/api/researcher', {
+  const response = await fetch(`${API_BASE}/api/researcher`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

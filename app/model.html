@@ -355,9 +355,10 @@
     let minuteSuccessChart;
     let comprehensiveData;
 
+    const API_BASE = 'https://play2win-bs0z.onrender.com';
     async function loadComprehensiveData() {
       try {
-        const response = await fetch('/api/comprehensive-data');
+        const response = await fetch(`${API_BASE}/api/comprehensive-data`);
         comprehensiveData = await response.json();
         
         populateTeamComparisonDropdown();
@@ -785,7 +786,7 @@
         console.log('Query being sent to model API:', query);
         modelPredictionResult.innerHTML = '<div class="loading">Generating AI model prediction... please wait.</div>';
         
-        const response = await fetch('/api/model-pred', {
+  const response = await fetch(`${API_BASE}/api/model-pred`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

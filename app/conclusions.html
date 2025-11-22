@@ -97,7 +97,8 @@
       }
 
       try {
-        const response = await fetch('/api/conclusions', {
+  const API_BASE = 'https://play2win-bs0z.onrender.com';
+  const response = await fetch(`${API_BASE}/api/conclusions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
