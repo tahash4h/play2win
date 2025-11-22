@@ -31,7 +31,7 @@ function processComprehensiveData(data) {
   const gameData = games.map(gameId => {
     const gamePlays = data.filter(row => row['Game ID'] === gameId);
     const firstPlay = gamePlays[0];
-    
+    if (!firstPlay) return null; // skip games with no plays
     return {
       gameId: gameId,
       opponent: firstPlay['Opponent'],
@@ -53,7 +53,7 @@ function processComprehensiveData(data) {
         phaseOfMatch: play['Phase of Match']
       }))
     };
-  });
+  }).filter(game => game !== null);
 
   // 1. Goals Timeline Data
   const goalsTimeline = [];
