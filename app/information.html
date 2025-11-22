@@ -383,8 +383,11 @@
 
     function populateTeamComparisonDropdown() {
       const container = document.getElementById('teamComparisonDropdown');
+      if (!container || !comprehensiveData || !comprehensiveData.teamComparison) {
+        if (container) container.innerHTML = '<div class="error">No team comparison data available.</div>';
+        return;
+      }
       const teams = Object.keys(comprehensiveData.teamComparison);
-      
       container.innerHTML = teams.map(team => {
         const stats = comprehensiveData.teamComparison[team];
         return `
@@ -402,8 +405,11 @@
 
     function populateShotMap() {
       const container = document.getElementById('shotMap');
+      if (!container || !comprehensiveData || !comprehensiveData.shotMapData) {
+        if (container) container.innerHTML = '<div class="error">No shot map data available.</div>';
+        return;
+      }
       const locations = Object.keys(comprehensiveData.shotMapData);
-      
       container.innerHTML = locations.map(location => {
         const data = comprehensiveData.shotMapData[location];
         return `
