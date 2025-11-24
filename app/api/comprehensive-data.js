@@ -10,6 +10,11 @@ function parseCSV(csvContent) {
   for (let i = 1; i < lines.length; i++) {
     if (lines[i].trim()) {
       const values = lines[i].split(',');
+      // Defensive: skip rows with wrong number of columns
+      if (values.length !== headers.length) {
+        console.warn(`Skipping malformed CSV row at line ${i+1}:`, lines[i]);
+        continue;
+      }
       const row = {};
       headers.forEach((header, index) => {
         row[header.trim()] = values[index] ? values[index].trim() : '';
@@ -31,7 +36,15 @@ function processComprehensiveData(data) {
   const gameData = games.map(gameId => {
     const gamePlays = data.filter(row => row['Game ID'] === gameId);
     const firstPlay = gamePlays[0];
-    
+    if (!firstPlay) {
+      console.warn(`Skipping gameId ${gameId} because no plays found.`);
+      return null;
+    }
+    // Defensive: check required fields
+    if (!firstPlay['Opponent'] || !firstPlay['Date'] || !firstPlay['Season']) {
+      console.warn(`Skipping gameId ${gameId} due to missing required fields.`, firstPlay);
+      return null;
+    }
     return {
       gameId: gameId,
       opponent: firstPlay['Opponent'],
@@ -53,7 +66,7 @@ function processComprehensiveData(data) {
         phaseOfMatch: play['Phase of Match']
       }))
     };
-  });
+  }).filter(game => game !== null);
 
   // 1. Goals Timeline Data
   const goalsTimeline = [];
@@ -153,22 +166,28 @@ function getComprehensiveData(req, res) {
     // Read the CSV file
     const csvPath = path.join(__dirname, '..', '..', 'match_data.csv');
     const csvContent = fs.readFileSync(csvPath, 'utf8');
-    
+
     // Parse CSV data
     const data = parseCSV(csvContent);
-    
+
     // Process data for comprehensive analysis
     const comprehensiveData = processComprehensiveData(data);
-    
+
+    // Defensive: check for required top-level properties
+    if (!comprehensiveData.goalsTimeline || !comprehensiveData.games) {
+      console.error('Comprehensive data missing required properties:', comprehensiveData);
+      return res.status(500).json({ error: 'Comprehensive data missing required properties' });
+    }
+
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
+
     res.json(comprehensiveData);
   } catch (error) {
     console.error('Error processing comprehensive data:', error);
-    res.status(500).json({ error: 'Failed to process comprehensive data' });
+    res.status(500).json({ error: 'Failed to process comprehensive data', details: error.message, stack: error.stack });
   }
 }
 

@@ -8,6 +8,7 @@ const { getComprehensiveData } = require('./app/api/comprehensive-data');
 const { getResearcherResponse } = require('./app/api/researcher');
 const { getModelPrediction } = require('./app/api/model-pred');
 const { getConclusion } = require('./app/api/conclusions');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,7 +28,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/auth/google/callback',
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
     },
     (accessToken, refreshToken, profile, done) => {
       // In production persist user profile in database
@@ -48,6 +49,14 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static('.'));
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://play2win-bs0z.onrender.com',
+    'http://localhost:5500', // for local file preview
+  ],
+  credentials: true,
+}));
 
 // Utility middleware to protect routes
 const ensureAuthenticated = (req, res, next) => {

@@ -360,9 +360,12 @@
     let minuteSuccessChart;
     let comprehensiveData;
 
+    const API_BASE = 'https://play2win-bs0z.onrender.com';
     async function loadComprehensiveData() {
       try {
-        const response = await fetch('/api/comprehensive-data');
+        const response = await fetch(`${API_BASE}/api/comprehensive-data`, {
+          credentials: 'include'
+        });
         comprehensiveData = await response.json();
         
         populateTeamComparisonDropdown();
@@ -382,8 +385,11 @@
 
     function populateTeamComparisonDropdown() {
       const container = document.getElementById('teamComparisonDropdown');
+      if (!container || !comprehensiveData || !comprehensiveData.teamComparison) {
+        if (container) container.innerHTML = '<div class="error">No team comparison data available.</div>';
+        return;
+      }
       const teams = Object.keys(comprehensiveData.teamComparison);
-      
       container.innerHTML = teams.map(team => {
         const stats = comprehensiveData.teamComparison[team];
         return `
@@ -401,8 +407,11 @@
 
     function populateShotMap() {
       const container = document.getElementById('shotMap');
+      if (!container || !comprehensiveData || !comprehensiveData.shotMapData) {
+        if (container) container.innerHTML = '<div class="error">No shot map data available.</div>';
+        return;
+      }
       const locations = Object.keys(comprehensiveData.shotMapData);
-      
       container.innerHTML = locations.map(location => {
         const data = comprehensiveData.shotMapData[location];
         return `
@@ -420,64 +429,75 @@
     }
 
     function populateFilters() {
+      if (!comprehensiveData || !comprehensiveData.goalsTimeline) return;
       // Populate opponent filter
       const opponentFilter = document.getElementById('opponentFilter');
-      const opponents = [...new Set(comprehensiveData.goalsTimeline.map(goal => goal.opponent))];
-      opponents.forEach(opponent => {
-        const option = document.createElement('option');
-        option.value = opponent;
-        option.textContent = opponent;
-        opponentFilter.appendChild(option);
-      });
-
+      if (opponentFilter) {
+        const opponents = [...new Set(comprehensiveData.goalsTimeline.map(goal => goal.opponent))];
+        opponents.forEach(opponent => {
+          const option = document.createElement('option');
+          option.value = opponent;
+          option.textContent = opponent;
+          opponentFilter.appendChild(option);
+        });
+      }
       // Populate context filter
       const contextFilter = document.getElementById('contextFilter');
-      const contexts = [...new Set(comprehensiveData.goalsTimeline.map(goal => goal.playContext))];
-      contexts.forEach(context => {
-        const option = document.createElement('option');
-        option.value = context;
-        option.textContent = context;
-        contextFilter.appendChild(option);
-      });
+      if (contextFilter) {
+        const contexts = [...new Set(comprehensiveData.goalsTimeline.map(goal => goal.playContext))];
+        contexts.forEach(context => {
+          const option = document.createElement('option');
+          option.value = context;
+          option.textContent = context;
+          contextFilter.appendChild(option);
+        });
+      }
     }
 
     function populateMatrixFilters() {
+      if (!comprehensiveData || !comprehensiveData.games) return;
       // Populate matrix opponent filter
       const matrixOpponentFilter = document.getElementById('matrixOpponentFilter');
-      const opponents = [...new Set(comprehensiveData.games.map(game => game.opponent))];
-      opponents.forEach(opponent => {
-        const option = document.createElement('option');
-        option.value = opponent;
-        option.textContent = opponent;
-        matrixOpponentFilter.appendChild(option);
-      });
-
+      if (matrixOpponentFilter) {
+        const opponents = [...new Set(comprehensiveData.games.map(game => game.opponent))];
+        opponents.forEach(opponent => {
+          const option = document.createElement('option');
+          option.value = opponent;
+          option.textContent = opponent;
+          matrixOpponentFilter.appendChild(option);
+        });
+      }
       // Populate matrix phase filter
       const matrixPhaseFilter = document.getElementById('matrixPhaseFilter');
-      const phases = ['Early', 'Middle', 'Late'];
-      phases.forEach(phase => {
-        const option = document.createElement('option');
-        option.value = phase;
-        option.textContent = phase;
-        matrixPhaseFilter.appendChild(option);
-      });
-
+      if (matrixPhaseFilter) {
+        const phases = ['Early', 'Middle', 'Late'];
+        phases.forEach(phase => {
+          const option = document.createElement('option');
+          option.value = phase;
+          option.textContent = phase;
+          matrixPhaseFilter.appendChild(option);
+        });
+      }
       // Populate matrix context filter
       const matrixContextFilter = document.getElementById('matrixContextFilter');
-      const contexts = [...new Set(comprehensiveData.games.flatMap(game => 
-        game.plays.map(play => play.playContext)
-      ).filter(context => context))];
-      contexts.forEach(context => {
-        const option = document.createElement('option');
-        option.value = context;
-        option.textContent = context;
-        matrixContextFilter.appendChild(option);
-      });
+      if (matrixContextFilter) {
+        const contexts = [...new Set(comprehensiveData.games.flatMap(game => 
+          game.plays.map(play => play.playContext)
+        ).filter(context => context))];
+        contexts.forEach(context => {
+          const option = document.createElement('option');
+          option.value = context;
+          option.textContent = context;
+          matrixContextFilter.appendChild(option);
+        });
+      }
     }
 
     function renderGoalsTimeline() {
-      const ctx = document.getElementById('goalsTimelineChart').getContext('2d');
-      
+      const chartElem = document.getElementById('goalsTimelineChart');
+      if (!comprehensiveData || !comprehensiveData.goalsTimeline || !chartElem) return;
+      const ctx = chartElem.getContext('2d');
+
       // Destroy existing chart
       if (goalsTimelineChart) {
         goalsTimelineChart.destroy();
@@ -485,7 +505,7 @@
 
       const selectedOpponent = document.getElementById('opponentFilter').value;
       const selectedContext = document.getElementById('contextFilter').value;
-      
+
       let filteredGoals = comprehensiveData.goalsTimeline;
       if (selectedOpponent !== 'all') {
         filteredGoals = filteredGoals.filter(goal => goal.opponent === selectedOpponent);
@@ -496,7 +516,7 @@
 
       // Create scatter plot data with xG as Y-axis instead of fixed 1
       const datasets = {};
-      
+
       filteredGoals.forEach(goal => {
         if (!datasets[goal.opponent]) {
           datasets[goal.opponent] = [];
@@ -857,7 +877,7 @@
       button.textContent = 'Generating...';
 
       try {
-        const response = await fetch('/api/researcher', {
+  const response = await fetch(`${API_BASE}/api/researcher`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
