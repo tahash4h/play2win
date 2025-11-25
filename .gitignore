@@ -8,7 +8,7 @@ match_data.csv
 
 .env
 
-researcher.js
+#researcher.js
 
 #server.js
 
@@ -17,6 +17,6 @@ researcher.js
 
 test.html
 
-model-pred.js
+#model-pred.js
 
-conclusions.js
+#conclusions.js
